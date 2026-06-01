@@ -157,6 +157,67 @@ https://你的用户名.github.io/english-reader/
 
 可选的 Node.js 部署平台包括 Render、Railway、Fly.io、Vercel Serverless 等。
 
+## 推荐方案：GitHub Pages + Cloudflare Worker
+
+Cloudflare Worker 可以放一个很小的翻译代理：
+
+```text
+浏览器 -> Cloudflare Worker -> Google Translate
+```
+
+这样 GitHub Pages 仍然托管静态网页，翻译请求走 Worker。
+
+### 第 1 步：创建 Cloudflare Worker
+
+1. 打开 <https://dash.cloudflare.com/>
+2. 注册或登录 Cloudflare 账号
+3. 左侧进入 `Workers & Pages`
+4. 点击 `Create`
+5. 选择 `Worker`
+6. 创建一个 Worker，例如 `english-reader-translate`
+
+### 第 2 步：粘贴 Worker 代码
+
+把本项目里的 `cloudflare-worker.js` 内容复制到 Cloudflare Worker 编辑器里，保存并部署。
+
+部署后你会得到一个地址，类似：
+
+```text
+https://english-reader-translate.你的用户名.workers.dev
+```
+
+测试这个地址：
+
+```text
+https://english-reader-translate.你的用户名.workers.dev/translate?sl=en&tl=zh-CN&q=hello
+```
+
+如果返回类似下面的 JSON，就说明 Worker 能用：
+
+```json
+{"translation":"你好"}
+```
+
+### 第 3 步：配置 GitHub Pages 前端
+
+打开 `js/config.js`，把 Worker 地址填进去，注意最后带 `/translate`：
+
+```js
+window.TRANSLATE_PROXY_URL = 'https://english-reader-translate.你的用户名.workers.dev/translate';
+```
+
+然后重新上传或提交到 GitHub。
+
+### 第 4 步：测试页面
+
+访问你的 GitHub Pages：
+
+```text
+https://你的用户名.github.io/english-reader/
+```
+
+输入英文，点击 `排版`，再点击单词卡片。如果 Worker 能访问 Google，就会显示翻译。
+
 ## 关于 Python 翻译库
 
 确实有一些 Python 库可以调用 Google 翻译，但 GitHub Pages 只能托管静态网页，不能运行 Python 后端。为了部署简单，这个项目现在直接在浏览器里请求 Google 免费在线翻译端点；本地运行时则由 Node.js 提供一个简单代理。
